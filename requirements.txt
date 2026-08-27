@@ -1,0 +1,20 @@
+# Application dependencies
+fpdf2==2.8.8
+matplotlib==3.10.8
+mcap==1.4.0
+mcap-ros2-support==0.5.7
+natsort==8.4.0
+numpy==2.2.6
+pandas==2.3.3
+plotly==7.0.0
+pyarrow==25.0.1
+PyYAML==6.0.3
+requests==2.34.2
+scikit-learn==1.7.2
+scipy==1.15.3
+tqdm==4.70.0
+
+# ROS package build dependencies
+catkin-pkg==1.1.0
+empy==3.3.4
+setuptools==84.0.0

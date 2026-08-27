@@ -1,0 +1,110 @@
+# Adapted from TAM__common's DummyVehicle configuration.ß
+# SPDX-License-Identifier: Apache-2.0
+
+vehicle:
+  actuator:
+    brake_delay: 0.1                    # [s]
+    gear_delay: 0.1                    # [s]
+    steering_delay: 0.05               # [s]
+    throttle_delay: 0.05               # [s]
+  aero:
+    air_density: 1.225                 # [kg/m^3]
+    drag_coeff: 1.0                    # [-]
+    lift_coeff: -3.0                   # [-]
+    cross_track_area: 1.0              # [m^2]
+    diff_cog_x: 0.0                    # [m]
+    diff_cog_y: 0.0                    # [m]
+    diff_cog_z: 0.0                    # [m]
+  brake:
+    brake_bias_front: 0.6              # [-]
+    disc_area: 0.0                     # [m^2]
+    disc_radius: 0.0                   # [m]
+    pad_area: 0.0                      # [m^2]
+    pad_mean_radius: 0.15              # [m]
+    pad_number: 1.0                    # [-]
+    piston_diameter: 0.9               # [m]
+    max_pressure: 800000.0             # [Pa]
+    friction_coeff: 0.3                # [-]
+    friction:
+      temperature: [0.0, 1000.0]       # [deg C]
+      coefficient: [0.3, 0.3]          # [-]
+  dimension:
+    track_width_front: 1.7             # [m]
+    track_width_rear: 1.6              # [m]
+    wheelbase: 3.0                     # [m]
+    distance_to_front_axle: 1.5        # [m]
+    cog_height: 0.3                    # [m]
+    length: 4.9                        # [m]
+    width: 1.93                        # [m]
+    height: 0.0                        # [m]
+  drivetrain:
+    clutch_engagement_start: 190.0
+    clutch_max_torque_slope: 10.0
+    drivetrain_efficiency: 0.95
+    gear_ratios:
+      - 3.0
+      - 2.0
+      - 1.8
+      - 1.4
+      - 1.2
+      - 1.0
+    transmission_ratio: 3.0
+  engine:
+    rev_max: 0.0                       # [rad/s]
+    rev_idle: 160.0                    # [rad/s]
+    engine_map:
+      rpms:
+        - 0.0
+        - 0.0
+      throttles:
+        - 0.0
+        - 0.0
+      torques:
+        - 0.0
+        - 0.0
+  inertia:
+    roll: 80.0                         # [kg*m^2]
+    pitch: 500.0                       # [kg*m^2]
+    yaw: 1000.0                        # [kg*m^2]
+    engine: 2.0                        # [kg*m^2]
+    wheel_front: 1.5                   # [kg*m^2]
+    wheel_rear: 1.8                    # [kg*m^2]
+  steering:
+    min_angle: -0.5                    # [rad]
+    max_angle: 0.5                     # [rad]
+    max_rate: 0.0                      # [rad/s]
+    ratio: 0.0                         # [-]
+  mass:
+    total: 800                         # [kg]
+    wheel_front: 15.0                  # [kg]
+    wheel_rear: 15.0                   # [kg]
+  rolling_resistance:
+    coeff: 0.025                       # [-]
+  planning_limits:
+    ax_machine_limits:                 # [m/s^2], sampled every 10 m/s from 0 to 90 m/s
+      - 8.0
+      - 7.0
+      - 7.0
+      - 7.0
+      - 6.0
+      - 5.0
+      - 4.0
+      - 3.0
+      - 2.0
+      - 1.0
+    ax_machine_limits_p2p_enabled:     # [m/s^2], sampled every 10 m/s from 0 to 90 m/s
+      - 8.0
+      - 7.0
+      - 7.0
+      - 7.0
+      - 6.0
+      - 5.0
+      - 4.0
+      - 3.0
+      - 2.0
+      - 1.0
+    gg_exponent_ax_pos: 1.31           # [-]
+    gg_exponent_ax_neg: 1.31           # [-]
+    ax_min_scale: 1.0                  # [-]
+    ax_max_scale: 1.0                  # [-]
+    ay_scale: 1.0                      # [-]

@@ -1,0 +1,5 @@
+repositories:
+  TAM__common:
+    type: git
+    url: https://github.com/TUMFTM/TAM__common.git
+    version: 4b19b608bdd8b6d6c60747e3fcfa1288399c3186

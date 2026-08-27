@@ -1,0 +1,68 @@
+# Adapted from TAM__common's DummyVehicle configuration.
+# SPDX-License-Identifier: Apache-2.0
+
+tires:
+  front_left:
+    radius:
+      radius_20mps: 0.3
+      velocity_scaling:
+        velocity:
+          - 20.0
+          - 50.0
+          - 80.0
+        factor:
+          - 1.0
+          - 1.0
+          - 1.0
+    setup:
+      camber: 0.0
+      caster: 0.0
+      toe: 0.0
+  front_right:
+    radius:
+      radius_20mps: 0.3
+      velocity_scaling:
+        velocity:
+          - 20.0
+          - 50.0
+          - 80.0
+        factor:
+          - 1.0
+          - 1.0
+          - 1.0
+    setup:
+      camber: 0.0
+      caster: 0.0
+      toe: 0.0
+  rear_left:
+    radius:
+      radius_20mps: 0.3
+      velocity_scaling:
+        velocity:
+          - 20.0
+          - 50.0
+          - 80.0
+        factor:
+          - 1.0
+          - 1.0
+          - 1.0
+    setup:
+      camber: 0.0
+      caster: 0.0
+      toe: 0.0
+  rear_right:
+    radius:
+      radius_20mps: 0.3
+      velocity_scaling:
+        velocity:
+          - 20.0
+          - 50.0
+          - 80.0
+        factor:
+          - 1.0
+          - 1.0
+          - 1.0
+    setup:
+      camber: 0.0
+      caster: 0.0
+      toe: 0.0

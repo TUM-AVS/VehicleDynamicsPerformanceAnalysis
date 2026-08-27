@@ -1,0 +1,350 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+ <tabbed_widget name="Main Window" parent="main_window">
+  <Tab tab_name="Overview" containers="1">
+   <Container>
+    <DockSplitter sizes="0.333066;0.333868;0.333066" orientation="-" count="3">
+     <DockArea name="...">
+      <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
+       <range bottom="-2.959890" left="0.000000" top="70.571186" right="846.699193"/>
+       <limitY/>
+       <curve color="#d62728" name="vx_mps"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
+       <range bottom="-30.349590" left="0.000000" top="34.020878" right="846.699193"/>
+       <limitY/>
+       <curve color="#1ac938" name="a_total_mps2_smoothed"/>
+       <curve color="#ff7f0e" name="ax_mps2_smoothed"/>
+       <curve color="#f14cc1" name="ay_mps2_smoothed"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
+       <range bottom="-0.128475" left="0.000000" top="0.173296" right="846.699193"/>
+       <limitY/>
+       <curve color="#1ac938" name="curvature"/>
+       <curve color="#ff7f0e" name="curvature_smoothed"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Track" containers="1">
+   <Container>
+    <DockSplitter sizes="1" orientation="-" count="1">
+     <DockSplitter sizes="0.5;0.5" orientation="|" count="2">
+      <DockSplitter sizes="0.500401;0.499599" orientation="-" count="2">
+       <DockArea name="...">
+        <plot flip_y="false" style="Lines" flip_x="false" mode="XYPlot">
+         <range bottom="-36.837611" left="-52.751032" top="19.624793" right="49.995545"/>
+         <limitY/>
+         <curve color="#1ac938" curve_x="ay_mps2" curve_y="ax_mps2" name="a[y_mps2;x_mps2]"/>
+         <curve color="#f14cc1" curve_x="ay_mps2_smoothed" curve_y="ax_mps2_smoothed" name="a[y_mps2_smoothed;x_mps2_smoothed]"/>
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
+         <range bottom="-0.128475" left="-52.751032" top="0.173296" right="846.699193"/>
+         <limitY/>
+         <curve color="#1ac938" name="curvature"/>
+         <curve color="#ff7f0e" name="curvature_smoothed"/>
+        </plot>
+       </DockArea>
+      </DockSplitter>
+      <DockArea name="...">
+       <plot flip_y="false" style="Lines" flip_x="false" mode="XYPlot">
+        <range bottom="11.701252" left="44.330747" top="11.725964" right="44.350885"/>
+        <limitY/>
+        <curve color="#f14cc1" curve_x="pos_x_m" curve_y="pos_y_m" name="pos_[x_m;y_m]"/>
+       </plot>
+      </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Longitudinal" containers="1">
+   <Container>
+    <DockSplitter sizes="0.500401;0.499599" orientation="-" count="2">
+     <DockSplitter sizes="0.500492;0.499508" orientation="|" count="2">
+      <DockArea name="...">
+       <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
+        <range bottom="-2.959939" left="0.000000" top="70.573200" right="846.699193"/>
+        <limitY/>
+        <curve color="#d62728" name="vx_mps"/>
+        <curve color="#17becf" name="v_mps"/>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
+        <range bottom="-0.161867" left="0.000000" top="0.129911" right="962.159082"/>
+        <limitY/>
+       </plot>
+      </DockArea>
+     </DockSplitter>
+     <DockSplitter sizes="0.502461;0.497539" orientation="|" count="2">
+      <DockArea name="...">
+       <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
+        <range bottom="-32.029349" left="0.000000" top="10.711439" right="846.699193"/>
+        <limitY/>
+        <curve color="#1ac938" name="ax_mps2">
+         <transform alias="ax_mps2[Moving Average]" name="Moving Average">
+          <options compensate_offset="true" value="10"/>
+         </transform>
+        </curve>
+        <curve color="#bcbd22" name="ax_mps2_smoothed"/>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
+        <range bottom="-2.500000" left="0.000000" top="102.500000" right="962.389082"/>
+        <limitY/>
+       </plot>
+      </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Lateral" containers="1">
+   <Container>
+    <DockSplitter sizes="0.500401;0.499599" orientation="-" count="2">
+     <DockSplitter sizes="0.500492;0.499508" orientation="|" count="2">
+      <DockArea name="...">
+       <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
+        <range bottom="-9.053455" left="0.000000" top="70.719810" right="846.699193"/>
+        <limitY/>
+        <curve color="#d62728" name="vx_mps"/>
+        <curve color="#9467bd" name="vy_mps"/>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
+        <range bottom="-1.215170" left="0.000000" top="1.147083" right="846.699193"/>
+        <limitY/>
+        <curve color="#9467bd" name="yaw_rate_radps"/>
+        <curve color="#d62728" name="yaw_rate_radps_smoothed"/>
+        <curve color="#bcbd22" name="beta_rad"/>
+       </plot>
+      </DockArea>
+     </DockSplitter>
+     <DockSplitter sizes="0.502461;0.497539" orientation="|" count="2">
+      <DockArea name="...">
+       <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
+        <range bottom="-34.102539" left="0.000000" top="20.032966" right="846.699193"/>
+        <limitY/>
+        <curve color="#1f77b4" name="delta_f_rad">
+         <transform alias="delta_f_rad[Scale/Offset]" name="Scale/Offset">
+          <options time_offset="0" value_offset="0" value_scale="57.296"/>
+         </transform>
+        </curve>
+       </plot>
+      </DockArea>
+      <DockArea name="...">
+       <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
+        <range bottom="-47.400735" left="0.000000" top="44.645248" right="846.699193"/>
+        <limitY/>
+        <curve color="#f14cc1" name="ay_mps2"/>
+        <curve color="#1f77b4" name="ay_mps2_smoothed"/>
+       </plot>
+      </DockArea>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Tires" containers="1">
+   <Container>
+    <DockSplitter sizes="0.333066;0.333868;0.333066" orientation="-" count="3">
+     <DockArea name="...">
+      <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
+       <range bottom="-21.160113" left="0.000000" top="48.328916" right="846.699193"/>
+       <limitY/>
+       <curve color="#1ac938" name="alpha_fl_rad">
+        <transform alias="alpha_fl_rad[Moving Variance]" name="Scale/Offset">
+         <options time_offset="0" value_offset="0" value_scale="57.296"/>
+        </transform>
+       </curve>
+       <curve color="#ff7f0e" name="alpha_fr_rad">
+        <transform alias="alpha_fr_rad[Moving Average]" name="Scale/Offset">
+         <options time_offset="0" value_offset="0" value_scale="57.296"/>
+        </transform>
+       </curve>
+       <curve color="#f14cc1" name="alpha_rl_rad">
+        <transform alias="alpha_rl_rad[Moving Average]" name="Scale/Offset">
+         <options time_offset="0" value_offset="0" value_scale="57.296"/>
+        </transform>
+       </curve>
+       <curve color="#9467bd" name="alpha_rr_rad">
+        <transform alias="alpha_rr_rad[Moving Average]" name="Scale/Offset">
+         <options time_offset="0" value_offset="0" value_scale="57.296"/>
+        </transform>
+       </curve>
+       <curve color="#d62728" name="beta_rad">
+        <transform alias="beta_rad[Moving Average]" name="Scale/Offset">
+         <options time_offset="0" value_offset="0" value_scale="57.296"/>
+        </transform>
+       </curve>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
+       <range bottom="-1.720560" left="0.000000" top="70.542971" right="846.699193"/>
+       <limitY/>
+       <curve color="#d62728" name="v_mps"/>
+      </plot>
+     </DockArea>
+     <DockArea name="...">
+      <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
+       <range bottom="-0.487949" left="0.000000" top="1.036291" right="846.699193"/>
+       <limitY/>
+       <curve color="#1ac938" name="whl_slip_fl">
+        <transform alias="whl_slip_fl[Moving Variance]" name="Moving Average">
+         <options compensate_offset="true" value="10"/>
+        </transform>
+       </curve>
+       <curve color="#ff7f0e" name="whl_slip_fr">
+        <transform alias="whl_slip_fr[Moving Average]" name="Moving Average">
+         <options compensate_offset="true" value="10"/>
+        </transform>
+       </curve>
+       <curve color="#f14cc1" name="whl_slip_rl">
+        <transform alias="whl_slip_rl[Moving Average]" name="Moving Average">
+         <options compensate_offset="true" value="10"/>
+        </transform>
+       </curve>
+       <curve color="#9467bd" name="whl_slip_rr">
+        <transform alias="whl_slip_rr[Moving Average]" name="Moving Average">
+         <options compensate_offset="true" value="10"/>
+        </transform>
+       </curve>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Stability" containers="1">
+   <Container>
+    <DockSplitter sizes="1" orientation="-" count="1">
+     <DockSplitter sizes="0.500492;0.499508" orientation="|" count="2">
+      <DockSplitter sizes="0.500401;0.499599" orientation="-" count="2">
+       <DockArea name="...">
+        <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
+         <range bottom="-3.389429" left="0.000000" top="3.052065" right="846.699193"/>
+         <limitY/>
+         <curve color="#1ac938" name="yaw_rate_radps">
+          <transform alias="yaw_rate_radps[Moving Average]" name="Moving Average">
+           <options compensate_offset="true" value="10"/>
+          </transform>
+         </curve>
+         <curve color="#1f77b4" name="yaw_rate_single_track_radps">
+          <transform alias="yaw_rate_single_track_radps[Moving Average]" name="Moving Average">
+           <options compensate_offset="true" value="10"/>
+          </transform>
+         </curve>
+         <curve color="#d62728" name="yaw_rate_diff_single_track_radps">
+          <transform alias="yaw_rate_diff_single_track_radps[Moving Average]" name="Moving Average">
+           <options compensate_offset="true" value="10"/>
+          </transform>
+         </curve>
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
+         <range bottom="-49.117670" left="0.000000" top="427.431634" right="846.699193"/>
+         <limitY/>
+         <curve color="#ff7f0e" name="understeer_gradient"/>
+        </plot>
+       </DockArea>
+      </DockSplitter>
+      <DockSplitter sizes="0.500401;0.499599" orientation="-" count="2">
+       <DockArea name="...">
+        <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
+         <range bottom="-1.098971" left="0.000000" top="1.032690" right="846.699193"/>
+         <limitY/>
+         <curve color="#1ac938" name="yaw_rate_radps">
+          <transform alias="yaw_rate_radps[Moving Average]" name="Moving Average">
+           <options compensate_offset="true" value="10"/>
+          </transform>
+         </curve>
+         <curve color="#1f77b4" name="yaw_rate_ss_radps">
+          <transform alias="yaw_rate_ss_radps[Moving Average]" name="Moving Average">
+           <options compensate_offset="true" value="10"/>
+          </transform>
+         </curve>
+         <curve color="#d62728" name="yaw_rate_diff_ss_radps">
+          <transform alias="yaw_rate_diff_ss_radps[Moving Average]" name="Moving Average">
+           <options compensate_offset="true" value="10"/>
+          </transform>
+         </curve>
+        </plot>
+       </DockArea>
+       <DockArea name="...">
+        <plot flip_y="false" style="Lines" flip_x="false" mode="TimeSeries">
+         <range bottom="-0.637322" left="0.000000" top="0.809449" right="846.699193"/>
+         <limitY/>
+         <curve color="#1ac938" name="alpha_f_rad">
+          <transform alias="alpha_f_rad[Moving Average]" name="Moving Average">
+           <options compensate_offset="true" value="10"/>
+          </transform>
+         </curve>
+         <curve color="#1f77b4" name="alpha_r_rad">
+          <transform alias="alpha_r_rad[Moving Average]" name="Moving Average">
+           <options compensate_offset="true" value="10"/>
+          </transform>
+         </curve>
+         <curve color="#d62728" name="alpha_diff">
+          <transform alias="alpha_diff[Moving Average]" name="Moving Average">
+           <options compensate_offset="true" value="10"/>
+          </transform>
+         </curve>
+        </plot>
+       </DockArea>
+      </DockSplitter>
+     </DockSplitter>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <currentTabIndex index="0"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <Plugins>
+  <plugin ID="DataLoad CSV">
+   <default delimiter="0" time_axis="time_s"/>
+  </plugin>
+  <plugin ID="DataLoad MCAP"/>
+  <plugin ID="DataLoad ROS2 bags">
+   <use_header_stamp value="false"/>
+   <discard_large_arrays value="true"/>
+   <max_array_size value="100"/>
+   <boolean_strings_to_number value="true"/>
+   <remove_suffix_from_strings value="true"/>
+  </plugin>
+  <plugin ID="DataLoad ULog"/>
+  <plugin ID="ROS2 Topic Subscriber">
+   <use_header_stamp value="false"/>
+   <discard_large_arrays value="true"/>
+   <max_array_size value="100"/>
+   <boolean_strings_to_number value="true"/>
+   <remove_suffix_from_strings value="true"/>
+  </plugin>
+  <plugin ID="UDP Server"/>
+  <plugin ID="WebSocket Server"/>
+  <plugin ID="ZMQ Subscriber"/>
+  <plugin ID="Fast Fourier Transform"/>
+  <plugin ID="Quaternion to RPY"/>
+  <plugin ID="Reactive Script Editor">
+   <library code="--[[ Helper function to create a series from arrays&#xa;&#xa; new_series: a series previously created with ScatterXY.new(name)&#xa; prefix:     prefix of the timeseries, before the index of the array&#xa; suffix_X:   suffix to complete the name of the series containing the X value. If [nil], use the index of the array.&#xa; suffix_Y:   suffix to complete the name of the series containing the Y value&#xa; timestamp:   usually the tracker_time variable&#xa;              &#xa; Example:&#xa; &#xa; Assuming we have multiple series in the form:&#xa; &#xa;   /trajectory/node.{X}/position/x&#xa;   /trajectory/node.{X}/position/y&#xa;   &#xa; where {N} is the index of the array (integer). We can create a reactive series from the array with:&#xa; &#xa;   new_series = ScatterXY.new(&quot;my_trajectory&quot;) &#xa;   CreateSeriesFromArray( new_series, &quot;/trajectory/node&quot;, &quot;position/x&quot;, &quot;position/y&quot;, tracker_time );&#xa;--]]&#xa;&#xa;function CreateSeriesFromArray( new_series, prefix, suffix_X, suffix_Y, timestamp )&#xa;  &#xa;  --- clear previous values&#xa;  new_series:clear()&#xa;  &#xa;  --- Append points to new_series&#xa;  index = 0&#xa;  while(true) do&#xa;&#xa;    x = index;&#xa;    -- if not nil, get the X coordinate from a series&#xa;    if suffix_X ~= nil then &#xa;      series_x = TimeseriesView.find( string.format( &quot;%s.%d/%s&quot;, prefix, index, suffix_X) )&#xa;      if series_x == nil then break end&#xa;      x = series_x:atTime(timestamp)&#x9; &#xa;    end&#xa;    &#xa;    series_y = TimeseriesView.find( string.format( &quot;%s.%d/%s&quot;, prefix, index, suffix_Y) )&#xa;    if series_y == nil then break end &#xa;    y = series_y:atTime(timestamp)&#xa;    &#xa;    new_series:push_back(x,y)&#xa;    index = index+1&#xa;  end&#xa;end&#xa;&#xa;--[[ Similar to the built-in function GetSeriesNames(), but select only the names with a give prefix. --]]&#xa;&#xa;function GetSeriesNamesByPrefix(prefix)&#xa;  -- GetSeriesNames(9 is a built-in function&#xa;  all_names = GetSeriesNames()&#xa;  filtered_names = {}&#xa;  for i, name in ipairs(all_names)  do&#xa;    -- check the prefix&#xa;    if name:find(prefix, 1, #prefix) then&#xa;      table.insert(filtered_names, name);&#xa;    end&#xa;  end&#xa;  return filtered_names&#xa;end&#xa;&#xa;--[[ Modify an existing series, applying offsets to all their X and Y values&#xa;&#xa; series: an existing timeseries, obtained with TimeseriesView.find(name)&#xa; delta_x: offset to apply to each x value&#xa; delta_y: offset to apply to each y value &#xa;  &#xa;--]]&#xa;&#xa;function ApplyOffsetInPlace(series, delta_x, delta_y)&#xa;  -- use C++ indeces, not Lua indeces&#xa;  for index=0, series:size()-1 do&#xa;    x,y = series:at(index)&#xa;    series:set(index, x + delta_x, y + delta_y)&#xa;  end&#xa;end&#xa;"/>
+   <scripts/>
+  </plugin>
+  <plugin ID="CSV Exporter"/>
+  <plugin ID="ROS2 Topic Re-Publisher"/>
+ </Plugins>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <customMathEquations/>
+ <snippets/>
+ <!-- - - - - - - - - - - - - - - -->
+</root>
+

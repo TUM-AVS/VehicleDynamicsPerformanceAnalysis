@@ -1,0 +1,32 @@
+# Python environments and caches
+venv/
+.venv/
+.python-version
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Local environment and editor files
+.env
+.env.*
+.idea/
+.DS_Store
+
+# Application data and generated output
+test.py
+data/
+trash/
+src/graph_imgs_src/
+folder_cache.txt
+.pdfenv/
+output/
+examples/synthetic_rosbag/unified_format/
+
