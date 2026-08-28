@@ -334,7 +334,6 @@ Multiple Filtering and Gating Tools:
 - Corner Phases
 - Corner Speed
 - Corner Number
-- Corner Phase
 
 It can also be started directly with an optional path with a converted CSV file:
 
@@ -347,7 +346,7 @@ Few examples:
 
 | Corner names | Corner phases | GG by corner speed | GG by corner phase |
 | --- | --- | --- | --- |
-| ![Track map grouped by corner name](examples/figures/plot-creator-corner-name-track-map.png) | ![Track map grouped by corner phase](examples/figures/plot-creator-corner-phase-track-map.png) | ![Acceleration scatter plot grouped by corner speed](examples/figures/plot-creator-corner-speed-scatter.png) | ![Acceleration scatter plot grouped by corner phase](examples/figures/plot-creator-corner-phase-scatter.png) |
+| ![Track map grouped by corner name](examples/figures/plot-creator-corner-name-track-map.png) | ![Track map grouped by corner phase](examples/figures/plot-creator-corner-phase-track-map.png) | ![Acceleration scatter plot grouped by corner speed](examples/figures/plot-creator-corner-speed-scatter.png) | ![Acceleration scatter plot grouped by corner phase and filtered on one lap](examples/figures/plot-creator-corner-phase-scatter.png) |
 
 Generated interactive Plotly HTML files remain local unless explicitly shared.
 
