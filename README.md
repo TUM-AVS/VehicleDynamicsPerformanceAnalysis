@@ -7,6 +7,10 @@ This tool is a valuable data processing helper for all sorts of tasks when it co
 I can help with all sorts of annoyig and time consuming tasks you commonly encounter when working with vehicle dynamics data. 
 Wether it is asynchronous sampling or differnt sampling frequencies, a changed channel name which torpedoes your layouts, a format which can not be processed directly, only having raw sensor data which offer limited isights, wanting to overlay data from two different cars with different format or reference frames, or the creation of lap based overlays from continous data. There are just tons of time consuming tasks before vehicle dynamic data can offer valuable insights. Yes there are paid tools out there who do some of the things, but they are paid and unflexible. This Repository is build from practice and is designed to be modular and extendable, so feel to tailor it to your needs. If you develop valuable features along the way, i would be happy if you contribute.
 
+<p align="center">
+  <img src="examples/figures/plot-creator-lap-overlay.png" alt="Plot Creator lap overlay comparing vehicle speed and smoothed lateral and longitudinal acceleration" width="85%">
+</p>
+
 The application:
 
 - Reads CSV, MATLAB MAT, and ROS 2 MCAP files.
@@ -34,13 +38,14 @@ flowchart LR
 
 ## Supported Platform
 
-The supported baseline is:
+The supported platforms are:
 
-- Ubuntu 22.04
-- ROS 2 Humble installed at `/opt/ros/humble`
+- Ubuntu 22.04 with ROS 2 Humble
+- Ubuntu 24.04 with ROS 2 Jazzy
 
-Follow the official
-[ROS 2 Humble installation instructions](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debs.html),
+Follow the official installation instructions for
+[ROS 2 Humble](https://docs.ros.org/en/humble/Installation/Ubuntu-Install-Debs.html)
+or [ROS 2 Jazzy](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html),
 then install the non-ROS prerequisites if they are not already present:
 
 ```bash
@@ -48,10 +53,7 @@ sudo apt update
 sudo apt install git libboost-dev libeigen3-dev libyaml-cpp-dev python3-colcon-common-extensions python3-dev python3-tk python3-vcstool python3-venv
 ```
 
-For experimental Ubuntu 24.04 use the official
-[ROS 2 Jazzy installation instructions](https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html)
-and export `ROS_DISTRO=jazzy` before running `setup.sh`. Other operating systems
-and ROS distributions are not currently supported.
+Other operating systems and ROS distributions are not currently supported.
 
 ## Dependency Layout
 
@@ -64,8 +66,7 @@ workspace/
 ```
 
 [`dependencies.repos`](dependencies.repos) pins the public
-[`TAM__common`](https://github.com/TUMFTM/TAM__common) dependency to commit
-`4b19b608bdd8b6d6c60747e3fcfa1288399c3186`. From this repository's root,
+[`TAM__common`](https://github.com/TUMFTM/TAM__common) dependency to a provenn commit. From this repository's root,
 import that revision into the parent directory and initialize its pinned
 submodules recursively:
 
@@ -75,8 +76,6 @@ git -C ../TAM__common submodule update --init --recursive
 ```
 
 `TAM__common` already contains its own pinned `TAM__msgs` copy as a submodule.
-**Do not add a standalone `TAM__msgs` checkout beside `TAM__common`.** Doing so
-can expose duplicate ROS package names to colcon and can mix message revisions.
 
 ## Environment Setup
 
@@ -91,8 +90,8 @@ The script:
 1. Resolves `TAM_COMMON_PATH`, defaulting to `../TAM__common`.
 2. Requires that checkout to be at the pinned commit and verifies every
    recursive submodule is initialized at its recorded revision.
-3. Requires `/opt/ros/${ROS_DISTRO}/setup.bash`, with `ROS_DISTRO=humble` by
-   default.
+3. Sources Humble or Jazzy from `/opt/ros` when available. Otherwise, it uses
+   the current shell environment.
 4. Creates `venv` if absent, or reuses an existing valid `venv`.
 5. Installs the pinned application and Python build dependencies from
    `requirements.txt` and marks the virtual environment with `COLCON_IGNORE`.
@@ -310,6 +309,10 @@ distance are removed. The resulting report contains run and performance
 summaries, best and average lap times, three-sector comparisons, speed and
 combined-acceleration plots, and a page of plots and KPIs for each valid lap.
 
+| Session summary | Lap 4 analysis | Lap 11 analysis |
+| --- | --- | --- |
+| ![Run Report session summary](examples/figures/run-report-session-summary.png) | ![Run Report analysis page for Lap 4](examples/figures/run-report-lap-4-analysis.png) | ![Run Report analysis page for Lap 11](examples/figures/run-report-lap-11-analysis.png) |
+
 ### Optional Weather Lookup
 
 To query OpenWeather using the city entered in the report dialog, export:
@@ -321,6 +324,36 @@ export OPENWEATHER_API_KEY=your_api_key
 If the variable is unset or empty, lookup is skipped without a network request
 and fallback weather values are used. When set, only the city name is sent to
 OpenWeather; telemetry is not uploaded. Never commit API keys.
+
+## Plot Creator
+
+The main workflow offers to launch Plot Creator after successful conversion. It offers:
+- Time Series Plots
+- Track Map Plots
+- Scatter Plots
+- Cornering Stiffness Evaluator plots
+  
+Multiple Filtering and Gating Tools:
+- Laps
+- Corner Phases
+- Corner Speed
+- Corner Number
+- Corner Phase
+
+It can also be started directly with an optional path with a converted CSV file:
+
+```bash
+python tools/plot_creator.py
+python tools/plot_creator.py examples/synthetic_rosbag/unified_format/synthetic_vehicle.csv
+```
+
+Few examples:
+
+| Corner names | Corner phases | GG by corner speed | GG by corner phase |
+| --- | --- | --- | --- |
+| ![Track map grouped by corner name](examples/figures/plot-creator-corner-name-track-map.png) | ![Track map grouped by corner phase](examples/figures/plot-creator-corner-phase-track-map.png) | ![Acceleration scatter plot grouped by corner speed](examples/figures/plot-creator-corner-speed-scatter.png) | ![Acceleration scatter plot grouped by corner phase](examples/figures/plot-creator-corner-phase-scatter.png) |
+
+Generated interactive Plotly HTML files remain local unless explicitly shared.
 
 ## Instantaneous Cornering Stiffness Estimation
 
@@ -369,6 +402,10 @@ Select the front or rear axle, a lap, and a distance location. The resulting
 view relates estimated and reference stiffness to velocity, track position, the
 active estimation window, and lateral force versus slip angle.
 
+<p align="center">
+  <img src="examples/figures/front-cornering-stiffness-estimation.png" alt="Front cornering stiffness evaluation with the selected track location and estimation window" width="60%">
+</p>
+
 The method is based on:
 
 - W. Sienel, "Estimation of the tire cornering stiffness and its application to
@@ -381,19 +418,14 @@ The method is based on:
   stability of autonomous vehicles," Master's thesis, Technische Universitaet
   Muenchen, Munich, 2025.
 
-## Plot Creator
 
-The main workflow offers to launch Plot Creator after successful conversion. It
-supports Overlay, Track Map, Scatter, and CS Evaluator plots, with lap and corner
-grouping where applicable. It can also be started directly with an optional
-unified CSV path:
 
-```bash
-python tools/plot_creator.py
-python tools/plot_creator.py examples/synthetic_rosbag/unified_format/synthetic_vehicle.csv
-```
+## Standalone Analysis Tools
 
-Generated interactive Plotly HTML files remain local unless explicitly shared.
+The `tools/` directory also provides command-line utilities for an
+interactive satellite trajectory overlay and candump CAN/CAN FD conversion.
+Their input contracts, examples, and map privacy notes are documented in the
+[standalone tools guide](tools/README.md).
 
 ## Configuration Overrides
 
@@ -405,7 +437,6 @@ configuration without editing tracked files:
 | `VDPA_CONFIG_DIR` | Directory containing `parser_config.csv`, `topic_list.csv`, and `filter_config.csv`. |
 | `VDPA_VEHICLE_CONFIG_DIR` | Directory whose child vehicle folders each contain `vehicle_config.yaml` and `tire_config.yaml`. |
 | `TAM_COMMON_PATH` | Alternative `TAM__common` checkout used by `setup.sh`. |
-| `ROS_DISTRO` | ROS setup name used by `setup.sh`; defaults to the supported `humble` baseline. |
 | `OPENWEATHER_API_KEY` | Optional OpenWeather API key used only while generating a Run Report. |
 
 For example:
@@ -427,9 +458,7 @@ application.
 | `src/` | Current analysis, conversion, reporting, and dynamics modules. |
 | `config/` | Parser, topic, smoothing, and vehicle params. |
 | `examples/` | Example Rosbag for initial verification of correct setup |
-| `tools/plot_creator.py` | Interactive plotting GUI. |
+| `tools/` | Interactive plotting and standalone analysis commands. |
 | `tests/` | unittest-based contracts and synthetic pipeline checks. |
 
 Contributor names are preserved in [CONTRIBUTORS.md](CONTRIBUTORS.md).
-
-

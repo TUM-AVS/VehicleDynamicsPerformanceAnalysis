@@ -2,18 +2,14 @@
 
 from __future__ import annotations
 
-import gc
-import glob
 import logging
-import math
 import multiprocessing
 import os
 import shutil
 import subprocess
 import sys
-import tempfile
 import tkinter as tk
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 from tkinter import filedialog
 from tkinter import messagebox
@@ -21,9 +17,9 @@ from tkinter import messagebox
 import numpy as np
 import pandas as pd
 import plotly.express as px
-from mcap.reader import make_reader
-from mcap_ros2.decoder import DecoderFactory
 from sklearn.neighbors import KNeighborsRegressor
+
+from .mcap_reader import read_mcap
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -187,74 +183,12 @@ class DataFile:
                 logging.exception('Failed to read MAT file:')
                 self.read_success = False
         elif self.file_name.endswith('.mcap'):
-            output_directory = Path(
-                tempfile.mkdtemp(prefix="vdpa_batches_")
-            )
             try:
-                with open(self.file_path, 'rb') as f:
-                    reader = make_reader(f)
-                    batch_size = 5000  # Adjust as needed
-                    batch = []
-                    batch_num = 0
-
-                    logging.info('Reading MCAP file: Processing messages in batches')
-                    with ProcessPoolExecutor(
-                        mp_context=multiprocessing.get_context("spawn")
-                    ) as executor:
-                        futures = []
-                        for schema, channel, message in reader.iter_messages(topics=self.topic_list):
-                            batch.append((schema, channel, message))
-                            if len(batch) >= batch_size:
-                                batch_file = output_directory / f'batch_{batch_num}.parquet'
-                                future = executor.submit(process_message_batch, batch, batch_file)
-                                futures.append(future)
-                                batch_num += 1
-                                batch = []
-                        if batch:
-                            batch_file = output_directory / f'batch_{batch_num}.parquet'
-                            future = executor.submit(process_message_batch, batch, batch_file)
-                            futures.append(future)
-                        # Wait for all futures to complete
-                        for idx, future in enumerate(as_completed(futures)):
-                            future.result()
-                            logging.debug(f"Batch {idx+1} processed.")
-
-                logging.info('Reading MCAP file: All batches processed and written to disk')
-
-                # Read and concatenate DataFrames using Pandas
-                # Get the list of Parquet files
-                batch_files = glob.glob(str(output_directory / 'batch_*.parquet'))
-
-                # Read each Parquet file into a DataFrame and collect them in a list
-                dataframes = []
-                total_files = len(batch_files)  # Get the total number of files
-
-                for i, batch_file in enumerate(batch_files, start=1):
-                    logging.debug(
-                        "Processing batch file %d of %d: %s",
-                        i,
-                        total_files,
-                        batch_file,
-                    )
-                    df_batch = pd.read_parquet(batch_file)
-                    df_sparse = df_batch.astype(pd.SparseDtype("float", float('nan')))
-                    dataframes.append(df_sparse)
-
-                # Concatenate the DataFrames
-                logging.info('Reading MCAP file: Concatenating DataFrames')
-                self.data = pd.concat(dataframes, ignore_index=True, sort=True)
-                # Move '__time' to be the first column
-                cols = self.data.columns.tolist()
-                if '__time' in cols:
-                    cols.insert(0, cols.pop(cols.index('__time')))
-                    self.data = self.data[cols]
-                    self.data = self.data.sort_values(by='__time').reset_index(drop=True)
+                self.data = read_mcap(self.file_path, self.topic_list)
                 self.read_success = True
             except Exception:
                 logging.exception('Failed to read MCAP file:')
                 self.read_success = False
-            finally:
-                shutil.rmtree(output_directory, ignore_errors=True)
 
         if self.read_success:
             logging.info('Read %s', self.file_name)
@@ -1099,6 +1033,9 @@ class DataFile:
         
 
     def calc_instantaneous_cornering_stiffness(self) -> None:
+        front_estimator = None
+        rear_estimator = None
+
         # Estimate instantaneous cornering stiffnesses
         check_list = ['alpha_f_rad', 'alpha_r_rad', 'fy_f_N', 'fy_r_N', 'time_s']
         check_not_list = ['cs_f_Nprad', 'cs_r_Nprad']
@@ -1164,8 +1101,13 @@ class DataFile:
         conditions_met, issues = self.check_signals(check_list, check_not_list)
         if conditions_met:
             try:
-                self.data['cs_ratio_f'] = InstantaneousCorneringStiffnessEstimator(self.data['alpha_f_rad'], self.data['fy_f_N'], sampling_frequency=self.sample_frequency).calculate_cornering_stiffness_ratio(self.data['cs_f_Nprad'])
-                self.data['cs_ratio_r'] = InstantaneousCorneringStiffnessEstimator(self.data['alpha_r_rad'], self.data['fy_r_N'], sampling_frequency=self.sample_frequency).calculate_cornering_stiffness_ratio(self.data['cs_r_Nprad'])
+                if front_estimator is None or rear_estimator is None:
+                    from .cornering_stiffness_estimator import InstantaneousCorneringStiffnessEstimator
+                    front_estimator = InstantaneousCorneringStiffnessEstimator(self.data['alpha_f_rad'], self.data['fy_f_N'], sampling_frequency=self.sample_frequency)
+                    rear_estimator = InstantaneousCorneringStiffnessEstimator(self.data['alpha_r_rad'], self.data['fy_r_N'], sampling_frequency=self.sample_frequency)
+
+                self.data['cs_ratio_f'] = front_estimator.calculate_cornering_stiffness_ratio(self.data['cs_f_Nprad'])
+                self.data['cs_ratio_r'] = rear_estimator.calculate_cornering_stiffness_ratio(self.data['cs_r_Nprad'])
                 logging.info(' Calculated cornering stiffness ratios')
             except Exception as e: logging.error(e)
         else:
@@ -1476,134 +1418,6 @@ class DataFile:
                 check=False,
                 cwd=str(self.folder_path.resolve()),
             )
-
-def process_message_batch(batch, batch_file):
-    results = []
-    factory = DecoderFactory()  # Initialize DecoderFactory once per batch
-    for schema, channel, message in batch:
-        try:
-            # Extract message encoding; default to 'ros2' if not specified
-            message_encoding = getattr(channel, 'message_encoding', 'ros2')
-            
-            # Get the decoder callable
-            decoder_callable = factory.decoder_for(message_encoding, schema)
-            
-            if decoder_callable is None:
-                logging.warning(f"No decoder available for encoding '{message_encoding}' and schema '{schema}'. Skipping message.")
-                continue
-            
-            # Decode the message bytes using the callable
-            ros_msg = decoder_callable(message.data)
-            
-            # Flatten the ROS message into a dictionary
-            msg_dict = flatten_ros_msg(ros_msg, channel.topic)
-            
-            # Add timestamp
-            msg_dict['__time'] = float(message.log_time) / 1e9
-            results.append(msg_dict)
-        except Exception as e:
-            logging.exception(f"Error decoding ROS message on topic '{channel.topic}': {e}")
-    result_count = len(results)
-    if result_count:
-        df_batch = pd.DataFrame(results)
-        df_batch.to_parquet(batch_file)
-        del df_batch
-    del results
-    gc.collect()  # Force garbage collection in the worker process
-    return result_count
-
-
-def flatten_ros_msg(msg, base_path):
-    """Flatten a ROS message into a flat dictionary with keys as paths, iteratively."""
-    stack = [(base_path, msg, 0)]
-    #logging.debug(f"Flattening ROS message: {base_path}")
-    flat_dict = {}
-    while stack:
-        current_path, current_msg, depth = stack.pop()
-        if depth > 6:  # Arbitrary limit to depth
-            logging.warning(f"Maximum depth exceeded at {current_path}")
-            continue
-        if isinstance(current_msg, (int, float)):
-            flat_dict[current_path] = current_msg
-        elif isinstance(current_msg, (list, tuple)):
-            if len(current_msg) > 1000:  # Arbitrary limit to array size
-                logging.warning(f"Large array skipped at {current_path}")
-                continue
-            for idx, item in enumerate(current_msg):
-                item_path = f"{current_path}/{idx}"
-                stack.append((item_path, item, depth + 1))
-        else:
-            # current_msg is an object
-            # Check if current_msg is a Quaternion (has x, y, z, w)
-            if (
-                hasattr(current_msg, 'x') and
-                hasattr(current_msg, 'y') and
-                hasattr(current_msg, 'z') and
-                hasattr(current_msg, 'w')
-            ):
-                # It's a Quaternion, flatten x, y, z, w
-                x = current_msg.x
-                y = current_msg.y
-                z = current_msg.z
-                w = current_msg.w
-                flat_dict[f"{current_path}/x"] = x
-                flat_dict[f"{current_path}/y"] = y
-                flat_dict[f"{current_path}/z"] = z
-                flat_dict[f"{current_path}/w"] = w
-                # Compute roll, pitch, yaw
-                roll, pitch, yaw = quaternion_to_euler(x, y, z, w)
-                flat_dict[f"{current_path}/roll"] = roll
-                flat_dict[f"{current_path}/pitch"] = pitch
-                flat_dict[f"{current_path}/yaw"] = yaw
-            else:
-                # Process attributes
-                attributes = [
-                    attr for attr in dir(current_msg)
-                    if not attr.startswith('_') and not callable(getattr(current_msg, attr))
-                    and not attr.lower() == 'covariance'
-                ]
-                for attr in attributes:
-                    if attr in ('timestamp', 'stamp'):
-                        continue
-                    val = getattr(current_msg, attr)
-                    new_path = f"{current_path}/{attr}"
-                    stack.append((new_path, val, depth + 1))
-    if len(flat_dict) > 1000:  # Arbitrary limit to number of keys
-        logging.warning(f"Message at {base_path} resulted in a large number of fields: {len(flat_dict)}")
-    #logging.debug(f"Finished flattening ROS message: {base_path}")
-    return flat_dict
-
-def quaternion_to_euler(x, y, z, w):
-    """
-    Convert a quaternion into euler angles (roll, pitch, yaw)
-    Roll is rotation around x axis
-    Pitch is rotation around y axis
-    Yaw is rotation around z axis
-    """
-    # Normalize quaternion
-    norm = math.sqrt(x * x + y * y + z * z + w * w)
-    x /= norm
-    y /= norm
-    z /= norm
-    w /= norm
-
-    # Roll (x-axis rotation)
-    t0 = +2.0 * (w * x + y * z)
-    t1 = +1.0 - 2.0 * (x * x + y * y)
-    roll = math.atan2(t0, t1)
-
-    # Pitch (y-axis rotation)
-    t2 = +2.0 * (w * y - z * x)
-    t2 = max(-1.0, min(+1.0, t2))  # Clamp t2 to [-1, +1]
-    pitch = math.asin(t2)
-
-    # Yaw (z-axis rotation)
-    t3 = +2.0 * (w * z + x * y)
-    t4 = +1.0 - 2.0 * (y * y + z * z)
-    yaw = math.atan2(t3, t4)
-
-    return roll, pitch, yaw
-    
 
 def create_file_objects(folder_path) -> list[DataFile]:
     """

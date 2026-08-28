@@ -153,7 +153,7 @@ class CornerCharacterisation:
 
         n_phase = np.zeros(len(corner_df))
 
-        n_phase[[entry_start,mid_start,exit_start]] += 1
+        np.add.at(n_phase, [entry_start, mid_start, exit_start], 1)
         n_phase = n_phase.cumsum()
 
         phase_mapping = {

@@ -4,23 +4,16 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 VENV_PATH="${SCRIPT_DIR}/venv"
-ROS_DISTRO="${ROS_DISTRO:-humble}"
-ROS_SETUP="/opt/ros/${ROS_DISTRO}/setup.bash"
 TAM_COMMON_COMMIT="4b19b608bdd8b6d6c60747e3fcfa1288399c3186"
 TAM_COMMON_PATH="${TAM_COMMON_PATH:-${SCRIPT_DIR}/../TAM__common}"
-ROS_PREFIX="$(dirname -- "${ROS_SETUP}")"
-
-if [ -n "${COLCON_PREFIX_PATH:-}" ]; then
-  IFS=':' read -r -a sourced_prefixes <<< "${COLCON_PREFIX_PATH}"
-  for prefix in "${sourced_prefixes[@]}"; do
-    if [ -n "${prefix}" ] && [ "${prefix}" != "${ROS_PREFIX}" ]; then
-      echo "An external colcon workspace is already sourced: ${prefix}" >&2
-      echo "Run setup.sh from a clean shell so the pinned build is isolated." >&2
-      exit 1
-    fi
-  done
-  unset sourced_prefixes prefix
-fi
+ROS_SETUP=""
+for candidate in /opt/ros/humble/setup.bash /opt/ros/jazzy/setup.bash; do
+  if [ -f "${candidate}" ]; then
+    ROS_SETUP="${candidate}"
+    break
+  fi
+done
+unset candidate
 
 if [ ! -d "${TAM_COMMON_PATH}" ]; then
   echo "TAM__common not found at ${TAM_COMMON_PATH}." >&2
@@ -57,11 +50,6 @@ while IFS= read -r status; do
   esac
 done <<< "${submodule_status}"
 
-if [ ! -f "${ROS_SETUP}" ]; then
-  echo "ROS 2 setup file not found at ${ROS_SETUP}." >&2
-  exit 1
-fi
-
 if [ -e "${VENV_PATH}" ] && [ ! -f "${VENV_PATH}/bin/activate" ]; then
   echo "Existing path is not a usable virtual environment: ${VENV_PATH}" >&2
   exit 1
@@ -74,7 +62,9 @@ else
 fi
 
 set +u
-. "${ROS_SETUP}"
+if [ -n "${ROS_SETUP}" ]; then
+  . "${ROS_SETUP}"
+fi
 . "${VENV_PATH}/bin/activate"
 set -u
 
