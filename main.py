@@ -119,10 +119,15 @@ def main():
 
     converted_folder_path = folder_path / 'unified_format'
     if ask_user_to_generate_report():
-        run_report_generator(
-            last_converted_file.file_name,
-            converted_folder_path,
-        )
+        try:
+            run_report_generator(
+                last_converted_file.file_name,
+                converted_folder_path,
+            )
+        except Exception:
+            logging.exception(
+                "Run report generation failed; continuing to Plot Creator."
+            )
     else:
         print("Run report generation skipped.")
 

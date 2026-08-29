@@ -9,7 +9,7 @@ Whether it is asynchronous sampling or different sampling frequencies, a changed
 
 The application:
 
-- Reads CSV, MATLAB MAT, and ROS 2 MCAP files.
+- Reads CSV, MATLAB MAT, ROS 2 MCAP, and candump CAN/CAN FD files.
 - Converts channel names and unit into a common convention.
 - Processing stages:
    - Resamples asynchronous data into one continuous sampling frequency
@@ -23,7 +23,7 @@ The application:
 
 ```mermaid
 flowchart LR
-    A[CSV, MAT, or ROS 2 MCAP] --> B[Parsing and unification of channel names and units]
+    A[CSV, MAT, ROS 2 MCAP, or candump] --> B[Parsing and unification of channel names and units]
     B --> C[Resampling, calculation of derived signals, signal smoothing]
     C --> E[Save full and per-lap CSV files]
     E --> F[Run Report PDF]
@@ -174,6 +174,10 @@ directory is processed in natural filename order.
 | `.csv` | Comma- or tab-separated columns with a header matching one parser profile. |
 | `.mat` | MATLAB file with top-level numeric signals stored as two-column timestamp/value arrays. |
 | `.mcap` | ROS 2 MCAP with decodable schemas. Only topics in [`config/topic_list.csv`](config/topic_list.csv) are read and flattened. |
+| `.log`, `.candump` | Timestamped compact or bracketed candump CAN/CAN FD logs decoded with a selected JSON signal definition. |
+
+When a CAN log is read, the application prompts for its JSON signal definition.
+The JSON format is documented in the [standalone tools guide](tools/README.md#can-log-conversion).
 
 Source names and conversion factors are defined in
 [`config/parser_config.csv`](config/parser_config.csv). A profile matches only
@@ -185,7 +189,8 @@ defined in [`config/filter_config.csv`](config/filter_config.csv).
 Each supported input file is processed in this order:
 
 1. Load the selected vehicle configuration.
-2. Read the input data. For MCAP files, decode only configured topics.
+2. Read the input data. For MCAP files, decode only configured topics; for CAN
+   logs, decode frames using the selected JSON signal definition.
 3. Select a matching parser configuration.
 4. Rename source channels and apply unit conversions.
 5. Resample and interpolate sparse data when required.
@@ -195,6 +200,8 @@ Each supported input file is processed in this order:
 9. Characterize corners and, if enabled, estimate front and rear instantaneous
    cornering stiffness.
 10. Write the complete converted log and its per-lap CSV files.
+
+If neither `s_m` nor `s_norm_m` distance coordinate is available a GUI windows opens to draw a finish line. This will get used to differentiate the distance and lap signal.
 
 Most multi-output calculation families are skipped if one of their outputs
 already exists. The complete pipeline requires `time_s` and a usable `s_m` or
@@ -418,7 +425,9 @@ The method is based on:
 ## Standalone Analysis Tools
 
 The `tools/` directory also provides command-line utilities for an
-interactive satellite trajectory overlay and candump CAN/CAN FD conversion.
+interactive satellite trajectory overlay and optional standalone candump
+CAN/CAN FD conversion. The main application can parse the same CAN logs
+directly.
 Their input contracts, examples, and map privacy notes are documented in the
 [standalone tools guide](tools/README.md).
 

@@ -1,4 +1,4 @@
-"""Reusable candump parsing, CAN signal decoding, and CSV conversion."""
+"""Reusable candump parsing, CAN signal decoding, and tabular conversion."""
 
 from __future__ import annotations
 
@@ -12,7 +12,10 @@ from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import MappingProxyType
-from typing import Iterable, Iterator, Mapping, Sequence, TextIO
+from typing import TYPE_CHECKING, Iterable, Iterator, Mapping, Sequence, TextIO
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 MAX_CAN_ID = 0x1FFFFFFF
@@ -467,10 +470,15 @@ def iter_candump(lines: Iterable[str]) -> Iterator[CanFrame]:
 
 
 def read_candump(path: str | Path) -> Iterator[CanFrame]:
-    """Read candump frames from a UTF-8 text file."""
+    """Read candump frames, ignoring an unterminated final line."""
     input_path = Path(path)
     with input_path.open("r", encoding="utf-8") as source:
-        yield from iter_candump(source)
+        for line_number, line in enumerate(source, start=1):
+            if not line.strip():
+                continue
+            if not line.endswith("\n"):
+                return
+            yield parse_candump_line(line, line_number)
 
 
 def _extract_raw(payload: bytes, signal: SignalDefinition) -> int:
@@ -600,6 +608,75 @@ def _base_row(event: DecodedEvent) -> dict[str, object]:
         "is_extended": event.is_extended,
         "message": event.message_name,
     }
+
+
+def events_to_dataframe(
+    events: Iterable[DecodedEvent], database: CanDatabase
+) -> pd.DataFrame:
+    """Return decoded events in the sparse wide format used by the analyzer."""
+    import pandas as pd
+
+    signal_columns, column_names = _wide_column_names(database)
+    rows: list[dict[str, float]] = []
+    for event in events:
+        if event.timestamp is None:
+            raise DecodeError(
+                "CAN logs analyzed directly must include a timestamp on every decoded frame"
+            )
+        row = {"timestamp": event.timestamp}
+        for decoded_value in event.values:
+            try:
+                column = column_names[(event.message_name, decoded_value.signal_name)]
+            except KeyError as exc:
+                raise CsvError(
+                    f"decoded value {event.message_name}.{decoded_value.signal_name} "
+                    "is absent from the source definition"
+                ) from exc
+            row[column] = decoded_value.value
+        rows.append(row)
+
+    if not rows:
+        raise DecodeError("No configured CAN frames were decoded from the log")
+
+    data = pd.DataFrame.from_records(rows, columns=["timestamp", *signal_columns])
+    return data.dropna(axis=1, how="all")
+
+
+def read_can_log(
+    input_path: str | Path,
+    definition_path: str | Path,
+    *,
+    filter_duplicates: bool = True,
+) -> pd.DataFrame:
+    """Parse a candump log into a DataFrame, suppressing unchanged payloads by default."""
+    database = load_definitions(definition_path)
+    maximum_timestamp: float | None = None
+
+    def tracked_frames() -> Iterator[CanFrame]:
+        nonlocal maximum_timestamp
+        for frame in read_candump(input_path):
+            if database.message_for_id(frame.can_id, frame.is_extended) is not None:
+                if frame.timestamp is None:
+                    raise DecodeError(
+                        "CAN logs analyzed directly must include a timestamp on every "
+                        "decoded frame"
+                    )
+                maximum_timestamp = (
+                    frame.timestamp
+                    if maximum_timestamp is None
+                    else max(maximum_timestamp, frame.timestamp)
+                )
+            yield frame
+
+    events = decode_frames(
+        tracked_frames(),
+        database,
+        filter_duplicates=filter_duplicates,
+    )
+    data = events_to_dataframe(events, database)
+    if maximum_timestamp is not None and maximum_timestamp > data["timestamp"].max():
+        data.loc[len(data), "timestamp"] = maximum_timestamp
+    return data
 
 
 def write_csv(

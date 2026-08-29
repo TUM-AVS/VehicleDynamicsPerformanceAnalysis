@@ -38,6 +38,8 @@ high-latitude work, or survey-grade coordinate conversion.
 `can_decoder.py` converts compact or bracketed candump CAN/CAN FD logs using a
 validated JSON signal definition.
 
+The main application also reads `.log` and `.candump` files directly. Use this command-line converter when a standalone CSV without furtgher conversion is needed.
+
 ```bash
 python tools/can_decoder.py input.log definitions.json output.csv \
   --format wide --filter-duplicates --verbose

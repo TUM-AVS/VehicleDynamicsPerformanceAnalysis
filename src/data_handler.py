@@ -19,6 +19,7 @@ import pandas as pd
 import plotly.express as px
 from sklearn.neighbors import KNeighborsRegressor
 
+from .can_decoder import read_can_log
 from .mcap_reader import read_mcap
 
 
@@ -189,6 +190,17 @@ class DataFile:
             except Exception:
                 logging.exception('Failed to read MCAP file:')
                 self.read_success = False
+        elif self.file_name.endswith(('.log', '.candump')):
+            try:
+                definition_path = select_can_definition_file(self.folder_path)
+                self.data = read_can_log(
+                    self.file_path,
+                    definition_path,
+                )
+                self.read_success = True
+            except Exception:
+                logging.exception('Failed to read CAN log:')
+                self.read_success = False
 
         if self.read_success:
             logging.info('Read %s', self.file_name)
@@ -308,6 +320,7 @@ class DataFile:
         check_not_list = ['pos_x_m', 'pos_y_m']
         conditions_met, issues = self.check_signals(check_list, check_not_list)
         if conditions_met:
+            root = None
             try:
                 # --- open Tkinter dialog ---
                 import tkinter.simpledialog as simpledialog
@@ -316,7 +329,8 @@ class DataFile:
 
                 origin_text = simpledialog.askstring(
                     title="Set Geo Origin",
-                    prompt="Enter origin as: lat, lon"
+                    prompt="Enter origin as: lat, lon",
+                    parent=root,
                 )
 
                 if origin_text is None:
@@ -351,11 +365,104 @@ class DataFile:
                 # --- store results ---
                 self.data['pos_x_m'] = x
                 self.data['pos_y_m'] = y
-
-            except Exception as e:logging.error(e)
+            except Exception:
+                logging.exception(
+                    'Failed to convert pos_lat and pos_long to Cartesian coordinates'
+                )
+            finally:
+                if root is not None:
+                    root.destroy()
         else:
             logging.info(f'Did not calcualate pos_x_m, pos_y_m because of data column(s): ({issues})')        
-                
+
+        # Calc s coordinate from positions if no distance channel is available
+        check_list = ['time_s', 'pos_x_m', 'pos_y_m']
+        check_not_list = ['s_m', 's_norm_m']
+        conditions_met, issues = self.check_signals(check_list, check_not_list)
+        if conditions_met:
+            try:
+                x_values = self.data['pos_x_m'].to_numpy(dtype=float)
+                y_values = self.data['pos_y_m'].to_numpy(dtype=float)
+                time_values = self.data['time_s'].to_numpy(dtype=float)
+                line_start, line_end = select_start_finish_line(
+                    x_values,
+                    y_values,
+                    self.file_name,
+                )
+
+                positions = np.column_stack((x_values, y_values))
+                movement = positions[1:] - positions[:-1]
+                line_vector = line_end - line_start
+                if np.linalg.norm(line_vector) <= 1e-9:
+                    raise ValueError('Start/finish line endpoints must be distinct')
+
+                offset = line_start - positions[:-1]
+                denominator = (
+                    movement[:, 0] * line_vector[1]
+                    - movement[:, 1] * line_vector[0]
+                )
+                valid = np.abs(denominator) > 1e-12
+                path_fraction = np.full(len(movement), np.nan)
+                line_fraction = np.full(len(movement), np.nan)
+                path_fraction[valid] = (
+                    offset[valid, 0] * line_vector[1]
+                    - offset[valid, 1] * line_vector[0]
+                ) / denominator[valid]
+                line_fraction[valid] = (
+                    offset[valid, 0] * movement[valid, 1]
+                    - offset[valid, 1] * movement[valid, 0]
+                ) / denominator[valid]
+                intersects = (
+                    valid
+                    & (path_fraction >= 0)
+                    & (path_fraction <= 1)
+                    & (line_fraction >= 0)
+                    & (line_fraction <= 1)
+                )
+                candidates = np.flatnonzero(intersects) + 1
+
+                directional_crossings = []
+                for direction in (-1, 1):
+                    directed = candidates[
+                        np.sign(denominator[candidates - 1]).astype(int)
+                        == direction
+                    ]
+                    debounced = []
+                    for index in directed:
+                        if (
+                            not debounced
+                            or time_values[index] - time_values[debounced[-1]] >= 5
+                        ):
+                            debounced.append(int(index))
+                    directional_crossings.append(np.asarray(debounced, dtype=int))
+
+                crossings = max(directional_crossings, key=len)
+                if len(crossings) < 2:
+                    raise ValueError(
+                        'The selected start/finish line must have at least two '
+                        'crossings in one travel direction'
+                    )
+
+                step_distance = np.hypot(np.diff(x_values), np.diff(y_values))
+                cumulative_distance = np.concatenate(
+                    (np.array([0.0]), np.cumsum(step_distance))
+                )
+                reset_origins = np.zeros(len(cumulative_distance))
+                reset_origins[crossings] = cumulative_distance[crossings]
+                self.data['s_m'] = (
+                    cumulative_distance - np.maximum.accumulate(reset_origins)
+                )
+                logging.info(
+                    'Calculated s_m using %d start/finish crossings',
+                    len(crossings),
+                )
+            except Exception:
+                logging.exception(
+                    'Failed to calculate s_m from Cartesian coordinates'
+                )
+        else:
+            logging.info(f'Did not calculate s_m because of data column(s): ({issues})')
+
         # Calc vy if missing ad beta is available
         check_list = ['vx_mps', 'beta_rad']
         check_not_list = ['vy_mps']
@@ -1225,6 +1332,7 @@ class DataFile:
             
         else:
             self.lap_change_idx = np.array([0])
+            self.data['n_lap'] = np.ones(len(self.data), dtype=int)
 
     def get_s_norm_ref(self, s_offset=0) -> KNeighborsRegressor:
         # Instantiate the classifier
@@ -1429,11 +1537,11 @@ def create_file_objects(folder_path) -> list[DataFile]:
     file_list = list(Path(folder_path).iterdir())
     data_files_list = [
         file_name for file_name in file_list
-        if file_name.suffix in {'.csv', '.mat', '.mcap'}
+        if file_name.suffix in {'.csv', '.mat', '.mcap', '.log', '.candump'}
     ]
 
     if not data_files_list:
-        logging.error('No supported .csv, .mat, or .mcap files found.')
+        logging.error('No supported .csv, .mat, .mcap, .log, or .candump files found.')
         return []
 
     from natsort import natsorted
@@ -1474,6 +1582,129 @@ def select_data_folder():
     _write_cached_path(Path(folder_path))
 
     return Path(folder_path)
+
+
+def select_can_definition_file(initial_directory: Path | str) -> Path:
+    """Prompt for the JSON signal definition used to read one CAN log."""
+    root = tk.Tk()
+    root.withdraw()
+    try:
+        selected_path = filedialog.askopenfilename(
+            title='Select CAN Signal Definition',
+            initialdir=initial_directory,
+            filetypes=(('JSON definitions', '*.json'), ('All files', '*.*')),
+        )
+    finally:
+        root.destroy()
+    if not selected_path:
+        raise ValueError('No CAN signal definition selected')
+    logging.info(' Selected CAN Signal Definition: %s', selected_path)
+    return Path(selected_path)
+
+
+def select_start_finish_line(
+    x_values: np.ndarray,
+    y_values: np.ndarray,
+    file_name: str,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Display a trajectory and let the user select two line endpoints."""
+    import matplotlib.pyplot as plt
+    from matplotlib.widgets import Button
+
+    stride = max(1, len(x_values) // 20_000)
+    figure = plt.figure(figsize=(10, 7.5))
+    axis = figure.add_subplot()
+    figure.subplots_adjust(left=0.10, right=0.96, top=0.84, bottom=0.23)
+    if figure.canvas.manager is not None:
+        figure.canvas.manager.set_window_title(
+            'Select Start/Finish Line for Lap Slicing'
+        )
+    axis.plot(x_values[::stride], y_values[::stride], color='black', linewidth=1)
+    axis.set_aspect('equal', adjustable='datalim')
+    axis.set_xlabel('pos_x_m')
+    axis.set_ylabel('pos_y_m')
+    figure.suptitle(file_name, y=0.97)
+    axis.set_title('Click two endpoints, then confirm or redraw', pad=12)
+    axis.grid(True, alpha=0.25)
+
+    confirm_axis = figure.add_axes(
+        [0.23, 0.055, 0.16, 0.085], label='confirm_start_finish'
+    )
+    redraw_axis = figure.add_axes(
+        [0.42, 0.055, 0.16, 0.085], label='redraw_start_finish'
+    )
+    cancel_axis = figure.add_axes(
+        [0.61, 0.055, 0.16, 0.085], label='cancel_start_finish'
+    )
+    confirm_button = Button(confirm_axis, 'Confirm')
+    redraw_button = Button(redraw_axis, 'Redraw')
+    cancel_button = Button(cancel_axis, 'Cancel')
+    confirm_button.set_active(False)
+
+    selected_points: list[np.ndarray] = []
+    point_artists = []
+    line_artist = None
+    selection_result: list[tuple[np.ndarray, np.ndarray]] = []
+
+    def redraw_selection(_event=None):
+        nonlocal line_artist
+        for artist in point_artists:
+            artist.remove()
+        point_artists.clear()
+        if line_artist is not None:
+            line_artist.remove()
+            line_artist = None
+        selected_points.clear()
+        confirm_button.set_active(False)
+        figure.canvas.draw_idle()
+
+    def select_point(event):
+        nonlocal line_artist
+        if (
+            event.inaxes is not axis
+            or event.button != 1
+            or event.xdata is None
+            or event.ydata is None
+            or len(selected_points) >= 2
+        ):
+            return
+        point = np.array([event.xdata, event.ydata])
+        selected_points.append(point)
+        point_artists.extend(axis.plot(point[0], point[1], 'ro'))
+        if len(selected_points) == 2:
+            line_artist = axis.plot(
+                [selected_points[0][0], selected_points[1][0]],
+                [selected_points[0][1], selected_points[1][1]],
+                color='red',
+                linewidth=2.5,
+            )[0]
+            confirm_button.set_active(True)
+        figure.canvas.draw_idle()
+
+    def confirm_selection(_event):
+        if len(selected_points) != 2:
+            return
+        selection_result.append(
+            (selected_points[0].copy(), selected_points[1].copy())
+        )
+        plt.close(figure)
+
+    def cancel_selection(_event):
+        plt.close(figure)
+
+    click_connection = figure.canvas.mpl_connect('button_press_event', select_point)
+    confirm_button.on_clicked(confirm_selection)
+    redraw_button.on_clicked(redraw_selection)
+    cancel_button.on_clicked(cancel_selection)
+    try:
+        plt.show(block=True)
+    finally:
+        figure.canvas.mpl_disconnect(click_connection)
+        plt.close(figure)
+    if not selection_result:
+        raise ValueError('Start/finish line selection was cancelled')
+    return selection_result[0]
+
 
 def select_data_file():
     """

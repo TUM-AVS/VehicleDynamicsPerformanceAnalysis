@@ -205,7 +205,7 @@ def run_report_generator(converted_file_name, converted_folder_path):
     if laps_dict:
         all_laps_df = pd.concat(laps_dict.values())
         window_size = 30  # Use the same window size as elsewhere
-        overall_top_speed = all_laps_df['vx_mps'].rolling(window=window_size, min_periods=1).mean().max()
+        overall_top_speed = all_laps_df['v_mps'].rolling(window=window_size, min_periods=1).mean().max()
         overall_max_lat_acc = all_laps_df['ay_mps2'].rolling(window=window_size, min_periods=1).mean().max()
         overall_max_long_acc = all_laps_df['ax_mps2'].rolling(window=window_size, min_periods=1).mean().max()
         overall_min_long_acc = all_laps_df['ax_mps2'].rolling(window=window_size, min_periods=1).mean().min()
