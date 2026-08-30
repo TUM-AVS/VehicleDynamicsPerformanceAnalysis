@@ -1,14 +1,12 @@
 # Standalone Analysis Tools
 
 Run these commands from the repository root after activating the environment.
-Both tools are import-safe.
 
 ## Satellite Trajectory Viewer
 
 `plot_trajectories.py` overlays any number of local east/north trajectories in
-an interactive GUI using Esri World Imagery. The exact shared geographic origin
-must be supplied by the user. Visual output appears in the GUI window; the tool
-does not write an image file.
+an interactive GUI using Esri World Imagery. The shared geographic origin
+must be supplied by the user.
 
 ![Satellite trajectory viewer comparing two laps](../examples/figures/satellite-trajectory-overlay.png)
 
@@ -20,25 +18,17 @@ python tools/plot_trajectories.py \
   --origin-lon 11.0
 ```
 
-The trajectory specification is
-`PATH[,LABEL[,COLOR[,X_OFFSET[,Y_OFFSET]]]]`. The default coordinate columns
+The trajectory arguments are `PATH, LABEL, COLOR, X_OFFSET, Y_OFFSET`. The default coordinate columns
 are `pos_x_m` and `pos_y_m`; override them with `--x-column` and `--y-column`.
 
-The GUI uses `tkintermapview`, installed by `requirements.txt`. Tile requests
-disclose the client IP address and requested map area to Esri. Verify current
-provider terms and attribution requirements before publishing images of the
-viewer.
-
 The local-to-geographic conversion is an equirectangular WGS84 approximation
-intended for track-scale distances. It is not suitable for large regions,
-high-latitude work, or survey-grade coordinate conversion.
+intended for track-scale distances.
 
 ## CAN Log Conversion
 
-`can_decoder.py` converts compact or bracketed candump CAN/CAN FD logs using a
-validated JSON signal definition.
+`can_decoder.py` converts compact or bracketed candump CAN/CAN FD logs using a JSON DBC format.
 
-The main application also reads `.log` and `.candump` files directly. Use this command-line converter when a standalone CSV without furtgher conversion is needed.
+The main application also reads `.log` and `.candump` files directly. Use this command-line converter when a standalone CSV without furt2her conversion is needed.
 
 ```bash
 python tools/can_decoder.py input.log definitions.json output.csv \
